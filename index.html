@@ -19,6 +19,41 @@
     <a href="pages/finance.html">💸 Quản lí chi tiêu</a>
   </div>
 </div>
+<div style="margin:20px 0; display:flex; gap:10px; flex-wrap:wrap;">
+  <button onclick="backupLifeOS()">💾 Sao lưu dữ liệu</button>
+  <button onclick="restoreLifeOS()">♻️ Khôi phục dữ liệu</button>
+</div>
+
+<script>
+function backupLifeOS() {
+  const data = JSON.stringify(localStorage, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "lifeos_backup.json";
+  a.click();
+}
+
+function restoreLifeOS() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = JSON.parse(reader.result);
+      localStorage.clear();
+      for (let key in data) localStorage.setItem(key, data[key]);
+      alert("Khôi phục LifeOS thành công!");
+      location.reload();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+</script>
 
 </body>
 </html>
+
