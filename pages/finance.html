@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý tài chính cá nhân</title>
+
+<style>
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --text: #000;
+}
+
+body.dark {
+  --bg: #121212;
+  --card: #1e1e1e;
+  --text: #fff;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: var(--card);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+input, button, textarea {
+  padding: 6px;
+  margin: 5px 0;
+}
+
+.progress {
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress div {
+  height: 100%;
+  background: #4caf50;
+}
+
+.over {
+  background: #f44336 !important;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <button onclick="goHome()">🏠 Trang chủ</button>
+  <button onclick="goAsset()">🌱 Tài sản tích lũy</button>
+  <button onclick="toggleTheme()">🌙 / ☀️</button>
+</header>
+
+<div class="container">
+  <h2>💰 Quản lý tài chính cá nhân</h2>
+
+  <!-- NGUỒN THU -->
+  <div class="card">
+    <h3>💼 Nguồn thu</h3>
+    <div id="incomeList"></div>
+    <button onclick="addIncome()">➕ Thêm nguồn thu</button>
+    <p><b>Tổng thu:</b> <span id="totalIncome">0</span> VNĐ</p>
+  </div>
+
+  <!-- TỔNG TIỀN -->
+  <div class="card">
+    <label>Tổng tiền (nghìn đồng):</label><br>
+    <input type="number" id="totalMoney" readonly>
+  </div>
+
+  <div id="sections"></div>
+
+  <!-- GHI CHÚ -->
+  <div class="card">
+    <h3>📝 Ghi chú</h3>
+    <textarea id="noteBox"
+      placeholder="Nhập ghi chú của bạn..."
+      oninput="saveNote()"
+      style="width:100%; height:100px; border-radius:8px;">
+    </textarea>
+  </div>
+</div>
+
+<script>
+const RULES = [
+  { name: "Nhu cầu thiết yếu", percent: 50 },
+  { name: "Học tập – Phát triển – Trải nghiệm", percent: 30 },
+  { name: "Đầu tư – Tiết kiệm", percent: 20 }
+];
+
+function init() {
+  RULES.forEach((r, i) => createSection(r, i));
+  loadData();
+  loadNote();
+}
+
+function createSection(rule, index) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `
+    <h3>${rule.name} (${rule.percent}%)</h3>
+    <p class="limit">Hạn mức: 0 VNĐ</p>
+    <div class="progress"><div></div></div>
+    <p class="remain">Còn dư: 0 VNĐ</p>
+    <div class="items"></div>
+    <button onclick="addItem(${index})">➕ Thêm khoản chi</button>
+  `;
+  document.getElementById('sections').appendChild(div);
+}
+
+function addItem(sectionIndex, name='', money='') {
+  const section = document.querySelectorAll('.card')[sectionIndex + 2];
+  const items = section.querySelector('.items');
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <input placeholder="Tên khoản chi" value="${name}">
+    <input type="number" placeholder="Số tiền (nghìn)" value="${money}"
+      oninput="calculateAll()">
+  `;
+  items.appendChild(div);
+  saveData();
+}
+
+/* ========== INCOME SYSTEM ========== */
+
+function addIncome(name = '', money = '') {
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <input placeholder="Nguồn thu" value="${name}">
+    <input type="number" placeholder="Số tiền (nghìn)" value="${money}"
+      oninput="calculateIncome()">
+  `;
+  document.getElementById('incomeList').appendChild(div);
+  saveData();
+}
+
+function calculateIncome() {
+  let total = 0;
+
+  document.querySelectorAll('#incomeList input[type="number"]').forEach(inp => {
+    total += (Number(inp.value) || 0) * 1000;
+  });
+
+  document.getElementById('totalIncome').innerText = total.toLocaleString();
+  totalMoney.value = total / 1000;
+
+  calculateAll();
+}
+
+/* ========== CORE LOGIC ========== */
+
+function calculateAll() {
+  const total = Number(totalMoney.value) || 0;
+
+  RULES.forEach((rule, i) => {
+    const section = document.querySelectorAll('.card')[i + 2];
+    const limit = total * rule.percent / 100 * 1000;
+
+    let spent = 0;
+    section.querySelectorAll('.items input[type="number"]').forEach(inp => {
+      spent += (Number(inp.value) || 0) * 1000;
+    });
+
+    const remain = Math.max(limit - spent, 0);
+
+    section.querySelector('.limit').innerText =
+      `Hạn mức: ${limit.toLocaleString()} VNĐ | Đã chi: ${spent.toLocaleString()} VNĐ`;
+
+    section.querySelector('.remain').innerText =
+      `Còn dư: ${remain.toLocaleString()} VNĐ`;
+
+    const percent = limit ? Math.min(spent / limit * 100, 100) : 0;
+    const bar = section.querySelector('.progress div');
+    bar.style.width = percent + '%';
+    bar.className = spent > limit ? 'over' : '';
+  });
+
+  autoTransferToAsset();
+  saveData();
+}
+
+/* ========== AUTO WEALTH ENGINE ========== */
+
+function autoTransferToAsset() {
+  const total = Number(totalMoney.value) || 0;
+
+  const limit30 = total * 30 / 100 * 1000;
+  const limit20 = total * 20 / 100 * 1000;
+
+  const section30 = document.querySelectorAll('.card')[3];
+  let spent30 = 0;
+
+  section30.querySelectorAll('.items input[type="number"]').forEach(inp => {
+    spent30 += (Number(inp.value) || 0) * 1000;
+  });
+
+  const remain30 = Math.max(limit30 - spent30, 0);
+
+  const asset = {
+    time: new Date().toLocaleDateString(),
+    from30: remain30,
+    from20: limit20,
+    total: remain30 + limit20
+  };
+
+  localStorage.setItem('auto_asset', JSON.stringify(asset));
+}
+
+/* ========== STORAGE ========== */
+
+function saveData() {
+  const data = {
+    total: totalMoney.value,
+    incomes: [],
+    sections: []
+  };
+
+  document.querySelectorAll('#incomeList div').forEach(d => {
+    data.incomes.push({
+      name: d.querySelectorAll('input')[0].value,
+      money: d.querySelectorAll('input')[1].value
+    });
+  });
+
+  document.querySelectorAll('.card').forEach((card, i) => {
+    if (!card.querySelector('.items')) return;
+
+    const items = [];
+    card.querySelectorAll('.items div').forEach(d => {
+      items.push({
+        name: d.querySelectorAll('input')[0].value,
+        money: d.querySelectorAll('input')[1].value
+      });
+    });
+    data.sections.push(items);
+  });
+
+  localStorage.setItem('finance_data', JSON.stringify(data));
+}
+
+function loadData() {
+  const data = JSON.parse(localStorage.getItem('finance_data'));
+  if (!data) return;
+
+  if (data.incomes) {
+    data.incomes.forEach(it => addIncome(it.name, it.money));
+    calculateIncome();
+  }
+
+  if (data.sections) {
+    data.sections.forEach((items, i) => {
+      items.forEach(it => addItem(i, it.name, it.money));
+    });
+  }
+
+  calculateAll();
+}
+
+/* ========== NOTE ========== */
+
+function saveNote() {
+  localStorage.setItem('finance_note', noteBox.value);
+}
+
+function loadNote() {
+  const note = localStorage.getItem('finance_note');
+  if (note) noteBox.value = note;
+}
+
+/* ========== THEME ========== */
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme', document.body.classList.contains('dark'));
+}
+
+if (localStorage.getItem('theme') === 'true') {
+  document.body.classList.add('dark');
+}
+
+/* ========== NAV ========== */
+
+function goHome() {
+  window.location.href = "../index.html";
+}
+
+function goAsset() {
+  window.location.href = "all.html";
+}
+
+init();
+</script>
+
+</body>
+</html>
+

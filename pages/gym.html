@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Gym Journal</title>
+
+<style>
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --text: #000;
+  --border: #ddd;
+}
+
+body.dark {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #e5e7eb;
+  --border: #334155;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: bold;
+}
+
+.toggle {
+  cursor: pointer;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px;
+  vertical-align: top;
+}
+
+th {
+  background: rgba(0,0,0,0.05);
+}
+
+body.dark th {
+  background: rgba(255,255,255,0.05);
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  padding: 6px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.note-box {
+  margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV (GIỮ NGUYÊN) -->
+<div class="nav">
+  <a href="../index.html">← Home</a>
+  <div id="darkToggle" class="toggle">🌙</div>
+</div>
+
+<div class="container">
+  <h2>🏋️‍♂️ Lịch tập Gym (Thứ 2 → Thứ 7)</h2>
+
+  <!-- BẢNG LỊCH -->
+  <table>
+    <tr>
+      <th>Ngày</th>
+      <th>Nội dung tập</th>
+    </tr>
+    <tr>
+      <td>Thứ 2</td>
+      <td><textarea data-day="t2"></textarea></td>
+    </tr>
+    <tr>
+      <td>Thứ 3</td>
+      <td><textarea data-day="t3"></textarea></td>
+    </tr>
+    <tr>
+      <td>Thứ 4</td>
+      <td><textarea data-day="t4"></textarea></td>
+    </tr>
+    <tr>
+      <td>Thứ 5</td>
+      <td><textarea data-day="t5"></textarea></td>
+    </tr>
+    <tr>
+      <td>Thứ 6</td>
+      <td><textarea data-day="t6"></textarea></td>
+    </tr>
+    <tr>
+      <td>Thứ 7</td>
+      <td><textarea data-day="t7"></textarea></td>
+    </tr>
+  </table>
+
+  <!-- GHI CHÚ -->
+  <div class="note-box">
+    <h3>📝 Ghi chú</h3>
+    <textarea id="note" placeholder="Cảm giác tập, đau mỏi, tiến triển, điều chỉnh giáo án..."></textarea>
+  </div>
+</div>
+
+<script>
+/* ---------- DARK MODE ---------- */
+const toggle = document.getElementById('darkToggle');
+
+if (localStorage.getItem('dark') === 'true') {
+  document.body.classList.add('dark');
+  toggle.innerText = '☀';
+}
+
+toggle.onclick = () => {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('dark', isDark);
+  toggle.innerText = isDark ? '☀' : '🌙';
+};
+
+/* ---------- AUTOSAVE ---------- */
+const textareas = document.querySelectorAll('textarea');
+
+function saveGym() {
+  const data = {};
+  textareas.forEach(t => {
+    data[t.dataset.day || 'note'] = t.value;
+  });
+  localStorage.setItem('gym_data', JSON.stringify(data));
+}
+
+function loadGym() {
+  const data = JSON.parse(localStorage.getItem('gym_data'));
+  if (!data) return;
+  textareas.forEach(t => {
+    t.value = data[t.dataset.day || 'note'] || '';
+  });
+}
+
+textareas.forEach(t => t.addEventListener('input', saveGym));
+
+loadGym();
+</script>
+
+</body>
+</html>

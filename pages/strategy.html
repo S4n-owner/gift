@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Trading – Thư viện chiến lược</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+.section {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+.section h3 {
+  margin: 0;
+  cursor: pointer;
+}
+
+.content {
+  margin-top: 15px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  margin-top: 10px;
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tool {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <a href="trading.html">← Nhật ký</a>
+  <a href="../index.html">Home</a>
+</div>
+
+<div class="container">
+
+<h2>📐 Thư viện chiến lược giao dịch</h2>
+
+<!-- ================= DCA ================= -->
+<div class="section">
+  <h3 onclick="toggleSection(this)">📊 DCA – Đầu tư dài hạn</h3>
+  <div class="content">
+
+    <textarea id="dca_note" placeholder="
+• Chu kỳ thị trường
+• Khi nào bắt đầu tích lũy
+• Quy tắc giải ngân
+• Khi nào dừng DCA
+"></textarea>
+
+    <div class="tools">
+      <div class="tool"><input type="checkbox"> Chu kỳ kinh tế</div>
+      <div class="tool"><input type="checkbox"> On-chain</div>
+      <div class="tool"><input type="checkbox"> MVRV</div>
+      <div class="tool"><input type="checkbox"> RSI Weekly</div>
+      <div class="tool"><input type="checkbox"> MA 200W</div>
+      <div class="tool"><input type="checkbox"> Funding Rate</div>
+      <div class="tool"><input type="checkbox"> Fear & Greed</div>
+      <div class="tool"><input type="checkbox"> DXY</div>
+      <div class="tool"><input type="checkbox"> Lãi suất FED</div>
+      <div class="tool"><input type="checkbox"> Halving Cycle</div>
+      <div class="tool"><input type="checkbox"> Stablecoin Supply</div>
+      <div class="tool"><input type="checkbox"> Dominance BTC</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= SCALP ================= -->
+<div class="section">
+  <h3 onclick="toggleSection(this)">⚡ SCALP – EMA + CẢN</h3>
+  <div class="content">
+
+    <textarea id="scalp_note" placeholder="
+• Điều kiện thị trường
+• Cấu trúc xu hướng
+• Quy tắc vào lệnh
+• Quy tắc thoát lệnh
+"></textarea>
+
+    <div class="tools">
+      <div class="tool"><input type="checkbox"> EMA 20</div>
+      <div class="tool"><input type="checkbox"> EMA 50</div>
+      <div class="tool"><input type="checkbox"> EMA 200</div>
+      <div class="tool"><input type="checkbox"> Hỗ trợ kháng cự</div>
+      <div class="tool"><input type="checkbox"> Trendline</div>
+      <div class="tool"><input type="checkbox"> RSI</div>
+      <div class="tool"><input type="checkbox"> MACD</div>
+      <div class="tool"><input type="checkbox"> VWAP</div>
+      <div class="tool"><input type="checkbox"> Volume</div>
+      <div class="tool"><input type="checkbox"> Break & Retest</div>
+      <div class="tool"><input type="checkbox"> Liquidity Sweep</div>
+      <div class="tool"><input type="checkbox"> Order Block</div>
+      <div class="tool"><input type="checkbox"> Fair Value Gap</div>
+      <div class="tool"><input type="checkbox"> Session Killzone</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= RISK ================= -->
+<div class="section">
+  <h3 onclick="toggleSection(this)">🛡 Quản lý vốn</h3>
+  <div class="content">
+
+    <textarea id="risk_note" placeholder="
+• % rủi ro mỗi lệnh
+• Số lệnh tối đa mỗi ngày
+• Khi nào dừng giao dịch
+• Khi nào tăng khối lượng
+"></textarea>
+
+    <div class="tools">
+      <div class="tool"><input type="checkbox"> Rủi ro ≤ 1%/lệnh</div>
+      <div class="tool"><input type="checkbox"> RR ≥ 1:2</div>
+      <div class="tool"><input type="checkbox"> Thua 3 lệnh dừng</div>
+      <div class="tool"><input type="checkbox"> Không gồng lỗ</div>
+      <div class="tool"><input type="checkbox"> Không overtrade</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= CHECKLIST ================= -->
+<div class="section">
+  <h3 onclick="toggleSection(this)">✅ Checklist vào lệnh</h3>
+  <div class="content">
+
+    <div class="tools">
+      <div class="tool"><input type="checkbox"> Đúng xu hướng</div>
+      <div class="tool"><input type="checkbox"> Đúng vùng giá</div>
+      <div class="tool"><input type="checkbox"> Có mô hình rõ ràng</div>
+      <div class="tool"><input type="checkbox"> Có xác nhận nến</div>
+      <div class="tool"><input type="checkbox"> RR hợp lệ</div>
+      <div class="tool"><input type="checkbox"> Không FOMO</div>
+      <div class="tool"><input type="checkbox"> Không revenge trade</div>
+      <div class="tool"><input type="checkbox"> Đúng khung giờ</div>
+      <div class="tool"><input type="checkbox"> Đúng kế hoạch</div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+const STRATEGY_KEY = "strategy_library";
+
+/* Gập mở mục */
+function toggleSection(el) {
+  const content = el.nextElementSibling;
+  content.style.display =
+    content.style.display === "none" ? "block" : "none";
+}
+
+/* Lưu toàn bộ dữ liệu */
+function saveStrategy() {
+  const data = {
+    dca: dca_note.value,
+    scalp: scalp_note.value,
+    risk: risk_note.value,
+    checks: [...document.querySelectorAll("input[type=checkbox]")].map(c => c.checked)
+  };
+  localStorage.setItem(STRATEGY_KEY, JSON.stringify(data));
+}
+
+/* Load dữ liệu */
+function loadStrategy() {
+  const data = JSON.parse(localStorage.getItem(STRATEGY_KEY));
+  if (!data) return;
+
+  dca_note.value = data.dca || "";
+  scalp_note.value = data.scalp || "";
+  risk_note.value = data.risk || "";
+
+  document.querySelectorAll("input[type=checkbox]").forEach((c,i)=>{
+    c.checked = data.checks?.[i] || false;
+  });
+}
+
+/* Auto save */
+document.querySelectorAll("textarea, input[type=checkbox]")
+  .forEach(el => el.addEventListener("input", saveStrategy));
+
+loadStrategy();
+</script>
+
+</body>
+</html>

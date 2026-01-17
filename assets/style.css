@@ -1,0 +1,151 @@
+/* ===== RESET NHẸ ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== BIẾN MÀU (LIGHT) ===== */
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-sub: #475569;
+  --accent: #2563eb;
+  --border: #e2e8f0;
+}
+
+/* ===== DARK MODE ===== */
+body.dark {
+  --bg-main: #020617;
+  --bg-card: #020617;
+  --text-main: #e5e7eb;
+  --text-sub: #94a3b8;
+  --accent: #38bdf8;
+  --border: #1e293b;
+}
+
+/* ===== BODY ===== */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+  padding: 32px;
+  line-height: 1.6;
+}
+
+/* ===== TIÊU ĐỀ ===== */
+h1 {
+  font-size: 40px;
+  margin-bottom: 24px;
+}
+
+h2 {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+/* ===== DANH SÁCH MENU (TRANG CHÍNH) ===== */
+ul {
+  list-style: none;
+  max-width: 520px;
+}
+
+li {
+  margin-bottom: 12px;
+}
+
+a {
+  display: block;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text-main);
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== TEXTAREA ===== */
+textarea {
+  width: 100%;
+  min-height: 260px;
+  padding: 16px;
+  font-size: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-main);
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ===== BUTTON ===== */
+button {
+  margin-top: 12px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* ===== THANH ĐIỀU HƯỚNG TRANG CON ===== */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.toggle {
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 600px) {
+  body {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+}
+.card {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+}
+
+.card img {
+  max-width: 100%;
+  margin-top: 5px;
+}
+
+body.dark .card {
+  background: #1e293b;
+  border-color: #334155;
+}
+

@@ -1,0 +1,206 @@
+<!DOCTYPE html>  
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Trading – Nhật ký lệnh thua</title>
+
+<style>
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --text: #000;
+  --border: #ddd;
+}
+
+body.dark {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #e5e7eb;
+  --border: #334155;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: bold;
+}
+
+.toggle {
+  cursor: pointer;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+.entry {
+  display: flex;
+  gap: 15px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.image-box {
+  width: 100%;
+}
+
+.entry img {
+  border-radius: 8px;
+  display: block;
+}
+
+.zoom {
+  width: 100%;
+}
+
+.entry textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div>
+    <a href="../index.html">← Home</a> |
+    <a href="strategy.html">📐 Chiến lược</a>
+  </div>
+  <div id="darkToggle" class="toggle">🌙</div>
+</div>
+
+<div class="container">
+  <h2>📉 Nhật ký các lệnh thua</h2>
+  <div id="entries"></div>
+  <button onclick="addEntry()">➕ Thêm lệnh thua</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'losing_trades';
+
+/* ---------- DARK MODE ---------- */
+const toggle = document.getElementById('darkToggle');
+
+if (localStorage.getItem('dark') === 'true') {
+  document.body.classList.add('dark');
+  toggle.innerText = '☀';
+}
+
+toggle.onclick = () => {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('dark', isDark);
+  toggle.innerText = isDark ? '☀' : '🌙';
+};
+
+/* ---------- CORE LOGIC ---------- */
+
+function addEntry(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'entry';
+
+  const size = data.size || 220;
+
+  div.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+
+      <input type="file" accept="image/*">
+
+      <img src="${data.img || ''}"
+           style="
+             ${data.img ? '' : 'display:none;'}
+             max-width:100%;
+             width:${size}px;
+             height:auto;
+           ">
+
+      <input type="range" min="150" max="900" value="${size}" class="zoom">
+
+    </div>
+
+    <textarea placeholder="
+• Cảm xúc khi vào lệnh
+• Vốn lúc đó
+• Góc nhìn thị trường
+• Lý do thất bại
+">${data.text || ''}</textarea>
+  `;
+
+  const fileInput = div.querySelector('input[type=file]');
+  const img = div.querySelector('img');
+  const zoom = div.querySelector('.zoom');
+  const textarea = div.querySelector('textarea');
+
+  fileInput.onchange = () => {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      img.style.display = 'block';
+      img.style.width = zoom.value + 'px';
+      saveAll();
+    };
+    if (file) reader.readAsDataURL(file);
+  };
+
+  zoom.oninput = () => {
+    img.style.width = zoom.value + 'px';
+    saveAll();
+  };
+
+  textarea.oninput = saveAll;
+
+  document.getElementById('entries').appendChild(div);
+  saveAll();
+}
+
+function saveAll() {
+  const data = [];
+  document.querySelectorAll('.entry').forEach(entry => {
+    data.push({
+      img: entry.querySelector('img').src || '',
+      text: entry.querySelector('textarea').value,
+      size: entry.querySelector('.zoom').value
+    });
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadAll() {
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if (!data) return;
+  data.forEach(d => addEntry(d));
+}
+
+loadAll();
+</script>
+
+</body>
+</html>
