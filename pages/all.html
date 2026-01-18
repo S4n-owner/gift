@@ -31,14 +31,14 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
 <div class="section">
 <h2>🔄 Biến động tài sản</h2>
 <div>Trước: <b id="beforeTotal">0 đ</b></div>
-<input type="number" id="changeMoney" placeholder="+ Tiền kiếm được / - Tiền mất đi">
+<input type="number" id="changeMoney">
 <div>Biến động: <b id="diff">0 đ</b></div>
 <div>Sau: <span id="afterTotal" class="total">0 đ</span></div>
 <button onclick="applyChange()">Áp dụng</button>
 </div>
 
 <div class="section">
-<h2>💰 Tổng tài sản hiện tại</h2>
+<h2>💰 Tổng tài sản</h2>
 <div id="totalAsset" class="total">0 đ</div>
 </div>
 
@@ -49,11 +49,11 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
 </div>
 
 <div class="section">
-<h2>🎓 Đầu tư phát triển bản thân</h2>
+<h2>🎓 Phát triển bản thân</h2>
 <div id="selfList"></div>
-<button onclick="addSelfItem()">➕ Thêm danh mục</button>
+<button onclick="addSelfItem()">➕ Thêm</button>
 <div>
-  Tổng đã đầu tư: <b id="selfTotal">0 đ</b> / Quỹ 60%: <b id="selfLimit">0 đ</b>
+  Tổng: <b id="selfTotal">0 đ</b> / Quỹ 60%: <b id="selfLimit">0 đ</b>
   <div id="selfWarn"></div>
 </div>
 </div>
@@ -70,9 +70,15 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
   <div class="asset-card">📊 ETF<b id="etf"></b></div>
   <div class="asset-card">🏢 Cổ phiếu<b id="stock"></b></div>
   <div class="asset-card">🏛️ Bluechip<b id="bluechip"></b></div>
-  <div class="asset-card">⚡ Crypto mạo hiểm<b id="crypto"></b></div>
+  <div class="asset-card">⚡ Crypto<b id="crypto"></b></div>
   <div class="asset-card">🥇 Vàng<b id="gold"></b></div>
 </div>
+</div>
+
+<div class="section">
+<h2>🌳 Cây danh mục chi tiết</h2>
+
+<div id="trees"></div>
 </div>
 
 <script>
@@ -81,104 +87,136 @@ const f = n => Number(n||0).toLocaleString("vi-VN")+" đ";
 let total = Number(localStorage.getItem("lifeos_total")) || 0;
 let selfItems = JSON.parse(localStorage.getItem("lifeos_self")) || [];
 
-/* ================= BIẾN ĐỘNG ================= */
+let subAssets = JSON.parse(localStorage.getItem("lifeos_sub")) || {
+  emergency:[], etf:[], stock:[], bluechip:[], crypto:[], gold:[]
+};
 
-changeMoney.addEventListener("input",()=>{
+const keys = ["emergency","etf","stock","bluechip","crypto","gold"];
+const labels = {
+  emergency:"🚨 Quỹ khẩn cấp", etf:"📊 ETF", stock:"🏢 Cổ phiếu",
+  bluechip:"🏛️ Bluechip", crypto:"⚡ Crypto", gold:"🥇 Vàng"
+};
+
+/* ===== BIẾN ĐỘNG ===== */
+
+changeMoney.oninput = ()=>{
   const c = Number(changeMoney.value||0);
   beforeTotal.innerText = f(total);
-  diff.innerText = (c>=0?"+":"") + f(c);
+  diff.innerText = (c>=0?"+":"")+f(c);
   diff.className = c>=0?"up":"down";
-  afterTotal.innerText = f(total + c);
-});
+  afterTotal.innerText = f(total+c);
+};
 
 function applyChange(){
   total += Number(changeMoney.value||0);
   localStorage.setItem("lifeos_total", total);
-  changeMoney.value = "";
+  changeMoney.value="";
   renderWealth();
 }
 
-/* ================= PHÁT TRIỂN BẢN THÂN ================= */
+/* ===== SELF ===== */
+
+function saveSelf(){ localStorage.setItem("lifeos_self",JSON.stringify(selfItems)); }
 
 function addSelfItem(){
   selfItems.push({name:"",money:""});
-  saveSelf();
-  renderSelf();
-}
-
-function saveSelf(){
-  localStorage.setItem("lifeos_self", JSON.stringify(selfItems));
-}
-
-function updateSelfMoney(i,value){
-  selfItems[i].money = value;
-  saveSelf();
-  renderWealth();   // CHỈ tính toán – KHÔNG vẽ lại list
-}
-
-function updateSelfName(i,value){
-  selfItems[i].name = value;
-  saveSelf();
-}
-
-function removeSelf(i){
-  selfItems.splice(i,1);
-  saveSelf();
-  renderSelf();
+  saveSelf(); renderSelf();
 }
 
 function renderSelf(){
-  selfList.innerHTML = "";
+  selfList.innerHTML="";
   selfItems.forEach((it,i)=>{
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <input value="${it.name}" placeholder="Ví dụ: Tiếng Anh"
-        oninput="updateSelfName(${i},this.value)">
-      <input type="number" value="${it.money}" placeholder="Số tiền"
-        oninput="updateSelfMoney(${i},this.value)">
-      <button onclick="removeSelf(${i})">✕</button>`;
-    selfList.appendChild(div);
+    selfList.innerHTML+=`
+    <div class="item">
+      <input value="${it.name}" oninput="selfItems[${i}].name=this.value;saveSelf()">
+      <input type="number" value="${it.money}" oninput="selfItems[${i}].money=this.value;saveSelf();renderWealth()">
+      <button onclick="selfItems.splice(${i},1);saveSelf();renderSelf()">✕</button>
+    </div>`;
   });
 }
 
-/* ================= TÍNH TOÁN TÀI SẢN ================= */
+/* ===== SUB TREE ===== */
+
+function saveSub(){ localStorage.setItem("lifeos_sub",JSON.stringify(subAssets)); }
+
+function sumSub(key){
+  return subAssets[key].reduce((s,i)=>s+Number(i.money||0),0);
+}
+
+function renderTrees(){
+  trees.innerHTML="";
+  keys.forEach(k=>{
+    trees.innerHTML+=`
+      <h3>${labels[k]}</h3>
+      <div id="${k}List"></div>
+      <button onclick="addSub('${k}')">➕ Thêm</button>
+      <div id="${k}Warn"></div>`;
+    renderSub(k);
+  });
+}
+
+function addSub(key){
+  subAssets[key].push({name:"",money:""});
+  saveSub(); renderSub(key);
+}
+
+function renderSub(key){
+  const box=document.getElementById(key+"List");
+  box.innerHTML="";
+  subAssets[key].forEach((it,i)=>{
+    box.innerHTML+=`
+    <div class="item">
+      <input value="${it.name}" oninput="subAssets['${key}'][${i}].name=this.value;saveSub()">
+      <input type="number" value="${it.money}" oninput="subAssets['${key}'][${i}].money=this.value;saveSub();renderWealth()">
+      <button onclick="subAssets['${key}'].splice(${i},1);saveSub();renderSub('${key}');renderWealth()">✕</button>
+    </div>`;
+  });
+}
+
+/* ===== CORE DUY NHẤT ===== */
 
 function renderWealth(){
+
   totalAsset.innerText = f(total);
   beforeTotal.innerText = f(total);
   afterTotal.innerText = f(total);
 
-  const fund60v = total * 0.6;
-  const fund40v = total * 0.4;
+  const fund60v = total*0.6;
+  const fund40v = total*0.4;
 
-  fund60.innerText = f(fund60v);
-  fund40.innerText = f(fund40v);
-  selfLimit.innerText = f(fund60v);
+  fund60.innerText=f(fund60v);
+  fund40.innerText=f(fund40v);
+  selfLimit.innerText=f(fund60v);
 
-  const selfSum = selfItems.reduce((s,i)=>s+Number(i.money||0),0);
-  selfTotal.innerText = f(selfSum);
+  const selfSum=selfItems.reduce((s,i)=>s+Number(i.money||0),0);
+  selfTotal.innerText=f(selfSum);
+  selfWarn.innerText = selfSum>fund60v ? "⚠️ Vượt "+f(selfSum-fund60v) : "";
 
-  if(selfSum > fund60v){
-    selfWarn.innerText = "⚠️ Vượt quỹ 60%: " + f(selfSum - fund60v);
-    selfWarn.className = "warn";
-  } else selfWarn.innerText = "";
+  const invest = total*0.64;
+  investTotal.innerText=f(invest);
 
-  /* 40% + 24% = 64% */
-  const invest = total * 0.64;
-  investTotal.innerText = f(invest);
+  const limits={
+    emergency:invest*0.20, etf:invest*0.20, stock:invest*0.15,
+    bluechip:invest*0.20, crypto:invest*0.10, gold:invest*0.15
+  };
 
-  emergency.innerText = f(invest*0.20);
-  etf.innerText       = f(invest*0.20);
-  stock.innerText     = f(invest*0.15);
-  bluechip.innerText  = f(invest*0.20);
-  crypto.innerText    = f(invest*0.10);
-  gold.innerText      = f(invest*0.15);
+  for(let k of keys){
+
+    const used = sumSub(k);     // TIỀN THẬT TỪ CÂY
+    const limit = limits[k];   // HẠN MỨC CHIẾN LƯỢC
+
+    document.getElementById(k).innerText =
+      f(used)+" / "+f(limit);
+
+    document.getElementById(k+"Warn").innerText =
+      used>limit ? "⚠️ Vượt "+f(used-limit) : "";
+  }
 }
 
-/* ================= KHỞI ĐỘNG ================= */
+/* ===== INIT ===== */
 
 renderSelf();
+renderTrees();
 renderWealth();
 </script>
 
