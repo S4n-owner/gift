@@ -44,8 +44,8 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
 
 <div class="section">
 <h2>📊 Phân bổ chiến lược</h2>
-<div>60% Phát triển bản thân: <b id="fund60">0 đ</b></div>
-<div>40% Đầu tư & tiết kiệm: <b id="fund40">0 đ</b></div>
+<div>10% Phát triển bản thân: <b id="fund10">0 đ</b></div>
+<div>90% Đầu tư & tiết kiệm: <b id="fund90">0 đ</b></div>
 </div>
 
 <div class="section">
@@ -53,7 +53,7 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
 <div id="selfList"></div>
 <button onclick="addSelfItem()">➕ Thêm</button>
 <div>
-  Tổng: <b id="selfTotal">0 đ</b> / Quỹ 60%: <b id="selfLimit">0 đ</b>
+  Tổng: <b id="selfTotal">0 đ</b> / Quỹ 90%: <b id="selfLimit">0 đ</b>
   <div id="selfWarn"></div>
 </div>
 </div>
@@ -181,18 +181,18 @@ function renderWealth(){
   beforeTotal.innerText = f(total);
   afterTotal.innerText = f(total);
 
-  const fund60v = total*0.6;
-  const fund40v = total*0.4;
+  const fund10v = total*0.1;
+  const fund90v = total*0.9;
 
-  fund60.innerText=f(fund60v);
-  fund40.innerText=f(fund40v);
-  selfLimit.innerText=f(fund60v);
+  fund90.innerText=f(fund90v);
+  fund10.innerText=f(fund10v);
+  selfLimit.innerText=f(fund90v);
 
   const selfSum=selfItems.reduce((s,i)=>s+Number(i.money||0),0);
   selfTotal.innerText=f(selfSum);
   selfWarn.innerText = selfSum>fund60v ? "⚠️ Vượt "+f(selfSum-fund60v) : "";
 
-  const invest = total*0.64;
+  const invest = total*0.9;
   investTotal.innerText=f(invest);
 
   const limits={
