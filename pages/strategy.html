@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Trading – Thư viện chiến lược</title>
+<title>Trading – Máy tính DCA & Chiến lược</title>
 
 <style>
 body {
@@ -32,35 +32,83 @@ body {
 .section h3 {
   margin: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .content {
   margin-top: 15px;
 }
 
-textarea {
-  width: 100%;
-  min-height: 120px;
-  margin-top: 10px;
-}
-
-.tools {
+/* Phần CSS cho máy tính DCA */
+.dca-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
-  gap: 8px;
-  margin-top: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+.dca-input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.dca-result {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f0f8ff;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
 }
 
-.tool {
+/* Phần CSS cho Chiến lược SOL */
+.strategy-card {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  background-color: #fafafa;
+}
+.uptrend {
+  border-left: 4px solid #28a745;
+}
+.downtrend {
+  border-left: 4px solid #dc3545;
+}
+.sideway {
+  border-left: 4px solid #ffc107;
+}
+.strategy-card h4 {
+  margin: 0 0 10px 0;
   display: flex;
-  gap: 6px;
   align-items: center;
+  gap: 8px;
+}
+.step-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #444;
+  line-height: 1.6;
+}
+.note-box {
+  background: #fff3cd;
+  color: #856404;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  border-left: 4px solid #ffeeba;
+}
+.note-box ul {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
 }
 </style>
 </head>
 
 <body>
 
+<!-- ĐƯỜNG DẪN CŨ ĐƯỢC GIỮ NGUYÊN -->
 <div class="nav">
   <a href="trading.html">← Nhật ký</a>
   <a href="../index.html">Home</a>
@@ -68,108 +116,81 @@ textarea {
 
 <div class="container">
 
-<h2>📐 Thư viện chiến lược giao dịch</h2>
+<h2>📐 Công cụ & Chiến lược giao dịch</h2>
 
-<!-- ================= DCA ================= -->
+<!-- ================= MÁY TÍNH DCA ĐỘNG ================= -->
 <div class="section">
-  <h3 onclick="toggleSection(this)">📊 DCA – Đầu tư dài hạn</h3>
+  <h3 onclick="toggleSection(this)">🧮 Máy tính DCA Động (Theo giá & EMA)</h3>
   <div class="content">
-
-    <textarea id="dca_note" placeholder="
-• Chu kỳ thị trường
-• Khi nào bắt đầu tích lũy
-• Quy tắc giải ngân
-• Khi nào dừng DCA
-"></textarea>
-
-    <div class="tools">
-      <div class="tool"><input type="checkbox"> Chu kỳ kinh tế</div>
-      <div class="tool"><input type="checkbox"> On-chain</div>
-      <div class="tool"><input type="checkbox"> MVRV</div>
-      <div class="tool"><input type="checkbox"> RSI Weekly</div>
-      <div class="tool"><input type="checkbox"> MA 200W</div>
-      <div class="tool"><input type="checkbox"> Funding Rate</div>
-      <div class="tool"><input type="checkbox"> Fear & Greed</div>
-      <div class="tool"><input type="checkbox"> DXY</div>
-      <div class="tool"><input type="checkbox"> Lãi suất FED</div>
-      <div class="tool"><input type="checkbox"> Halving Cycle</div>
-      <div class="tool"><input type="checkbox"> Stablecoin Supply</div>
-      <div class="tool"><input type="checkbox"> Dominance BTC</div>
+    <p style="margin: 0; font-size: 0.9em; color: #555;">Tự động tính % vốn giải ngân dựa vào độ lệch giữa Giá hiện tại và đường EMA.</p>
+    
+    <div class="dca-grid">
+      <div>
+        <label>Vốn tối đa/tháng (VND):</label>
+        <input type="number" id="dca_max_cap" class="dca-input" value="10000000" oninput="calculateDynamicDCA()">
+      </div>
+      <div>
+        <label>Giá đường EMA (vd: EMA 50):</label>
+        <input type="number" id="dca_ema_price" class="dca-input" value="110" oninput="calculateDynamicDCA()">
+      </div>
+      <div>
+        <label>Giá cổ phiếu/coin hiện tại:</label>
+        <input type="number" id="dca_current_price" class="dca-input" value="100" oninput="calculateDynamicDCA()">
+      </div>
     </div>
 
+    <div class="dca-result">
+      <p style="margin: 5px 0;">📉 Độ lệch (Giá so với EMA): <strong id="res_deviation">0%</strong></p>
+      <p style="margin: 5px 0;">📊 % Vốn nên vào tháng này: <strong id="res_percent">0%</strong></p>
+      <p style="margin: 5px 0; font-size: 1.1em;">💵 Số tiền cần giải ngân: <strong id="res_amount" style="color: #d9534f;">0 VND</strong></p>
+    </div>
   </div>
 </div>
 
-<!-- ================= SCALP ================= -->
+<!-- ================= CHIẾN LƯỢC HOLD SOL ================= -->
 <div class="section">
-  <h3 onclick="toggleSection(this)">⚡ SCALP – EMA + CẢN</h3>
-  <div class="content">
-
-    <textarea id="scalp_note" placeholder="
-• Điều kiện thị trường
-• Cấu trúc xu hướng
-• Quy tắc vào lệnh
-• Quy tắc thoát lệnh
-"></textarea>
-
-    <div class="tools">
-      <div class="tool"><input type="checkbox"> EMA 20</div>
-      <div class="tool"><input type="checkbox"> EMA 50</div>
-      <div class="tool"><input type="checkbox"> EMA 200</div>
-      <div class="tool"><input type="checkbox"> Hỗ trợ kháng cự</div>
-      <div class="tool"><input type="checkbox"> Trendline</div>
-      <div class="tool"><input type="checkbox"> RSI</div>
-      <div class="tool"><input type="checkbox"> MACD</div>
-      <div class="tool"><input type="checkbox"> VWAP</div>
-      <div class="tool"><input type="checkbox"> Volume</div>
-      <div class="tool"><input type="checkbox"> Break & Retest</div>
-      <div class="tool"><input type="checkbox"> Liquidity Sweep</div>
-      <div class="tool"><input type="checkbox"> Order Block</div>
-      <div class="tool"><input type="checkbox"> Fair Value Gap</div>
-      <div class="tool"><input type="checkbox"> Session Killzone</div>
+  <h3 onclick="toggleSection(this)">🔥 Chiến lược Tối ưu HOLD SOL (JupSOL)</h3>
+  <div class="content" style="display: none;"> <!-- Để ẩn mặc định, bấm vào h3 sẽ mở ra -->
+    
+    <div class="strategy-card uptrend">
+      <h4 style="color: #28a745;">📈 Trạng thái: UPTREND (Tăng giá)</h4>
+      <ol class="step-list">
+        <li><strong>Stake SOL</strong> để nhận <code>JupSOL</code> (Hưởng lãi suất staking tự nhiên).</li>
+        <li><strong>Cho vay (Lend)</strong> <code>JupSOL</code> trên các nền tảng Lending (MarginFi, Kamino...).</li>
+        <li><strong>Vay (Borrow)</strong> <code>USDC</code> (Dùng JupSOL làm tài sản thế chấp).</li>
+        <li><strong>Mua SOL:</strong> Dùng USDC vừa vay để mua thêm SOL.</li>
+        <li><strong>Tạo Loop:</strong> Lặp lại quy trình (Stake SOL mới mua -> JupSOL -> Lend -> Vay USDC -> Mua SOL) để tối đa hóa đòn bẩy Long SOL.</li>
+      </ol>
     </div>
 
-  </div>
-</div>
-
-<!-- ================= RISK ================= -->
-<div class="section">
-  <h3 onclick="toggleSection(this)">🛡 Quản lý vốn</h3>
-  <div class="content">
-
-    <textarea id="risk_note" placeholder="
-• % rủi ro mỗi lệnh
-• Số lệnh tối đa mỗi ngày
-• Khi nào dừng giao dịch
-• Khi nào tăng khối lượng
-"></textarea>
-
-    <div class="tools">
-      <div class="tool"><input type="checkbox"> Rủi ro ≤ 1%/lệnh</div>
-      <div class="tool"><input type="checkbox"> RR ≥ 1:2</div>
-      <div class="tool"><input type="checkbox"> Thua 3 lệnh dừng</div>
-      <div class="tool"><input type="checkbox"> Không gồng lỗ</div>
-      <div class="tool"><input type="checkbox"> Không overtrade</div>
+    <div class="strategy-card sideway">
+      <h4 style="color: #d39e00;">➡️ Trạng thái: SIDEWAY (Đi ngang)</h4>
+      <ol class="step-list">
+        <li><strong>Stake SOL</strong> để nhận <code>JupSOL</code>.</li>
+        <li><strong>Cho vay (Lend)</strong> <code>JupSOL</code>.</li>
+        <li><strong>Vay (Borrow)</strong> <code>SOL</code> (Thay vì vay USDC, hãy vay SOL để tránh rủi ro biến động giá).</li>
+        <li><strong>Tạo Loop Yield:</strong> Lấy SOL vừa vay tiếp tục <strong>Stake nhận JupSOL</strong>. Loop liên tục để tối ưu hóa Yield (Lãi suất) ăn chênh lệch.</li>
+      </ol>
     </div>
 
-  </div>
-</div>
+    <div class="strategy-card downtrend">
+      <h4 style="color: #dc3545;">📉 Trạng thái: DOWNTREND (Giảm giá)</h4>
+      <ol class="step-list">
+        <li><strong>Stake SOL</strong> để nhận <code>JupSOL</code>.</li>
+        <li><strong>Cho vay (Lend)</strong> <code>JupSOL</code>.</li>
+        <li><strong>Vay (Borrow)</strong> <code>SOL</code>.</li>
+        <li><strong>Bán Khống (Short):</strong> Bán SOL vừa vay ra <code>USDC/USDT</code> và giữ Stablecoin. Khi giá SOL giảm sâu, dùng Stablecoin mua lại SOL trả nợ và ăn phần chênh lệch (Short SOL).</li>
+      </ol>
+    </div>
 
-<!-- ================= CHECKLIST ================= -->
-<div class="section">
-  <h3 onclick="toggleSection(this)">✅ Checklist vào lệnh</h3>
-  <div class="content">
-
-    <div class="tools">
-      <div class="tool"><input type="checkbox"> Đúng xu hướng</div>
-      <div class="tool"><input type="checkbox"> Đúng vùng giá</div>
-      <div class="tool"><input type="checkbox"> Có mô hình rõ ràng</div>
-      <div class="tool"><input type="checkbox"> Có xác nhận nến</div>
-      <div class="tool"><input type="checkbox"> RR hợp lệ</div>
-      <div class="tool"><input type="checkbox"> Không FOMO</div>
-      <div class="tool"><input type="checkbox"> Không revenge trade</div>
-      <div class="tool"><input type="checkbox"> Đúng khung giờ</div>
-      <div class="tool"><input type="checkbox"> Đúng kế hoạch</div>
+    <div class="note-box">
+      <strong>⚠️ LƯU Ý QUAN TRỌNG KHI SỬ DỤNG CHIẾN LƯỢC:</strong>
+      <ul>
+        <li><strong>Rủi ro thanh lý (Liquidation Risk):</strong> Đặc biệt cẩn thận trong Uptrend (vay USDC). Nếu giá SOL sập đột ngột, tài sản thế chấp JupSOL sẽ sụt giá làm giảm <em>Health Factor</em> dẫn đến cháy tài khoản. Luôn duy trì Health Factor ở mức an toàn.</li>
+        <li><strong>Rủi ro Smart Contract:</strong> Việc ký gửi tiền vào các dApp (Jupiter, Kamino, MarginFi) luôn tiềm ẩn rủi ro bị hack giao thức.</li>
+        <li><strong>Lãi suất vay (Borrow APY):</strong> Phải luôn theo dõi lãi suất vay. Đôi khi thị trường FOMO, lãi suất vay SOL/USDC bị đẩy lên quá cao, vượt quá lãi suất bạn nhận được từ Staking/Lending dẫn đến việc "lỗ lãi suất" mỗi ngày.</li>
+        <li><strong>Depeg JupSOL:</strong> Dù hiếm, nhưng token LST (Liquid Staking Token) như JupSOL có thể bị mất peg tỷ lệ 1:1 với SOL trong những thời điểm thị trường hoảng loạn.</li>
+      </ul>
     </div>
 
   </div>
@@ -178,8 +199,6 @@ textarea {
 </div>
 
 <script>
-const STRATEGY_KEY = "strategy_library";
-
 /* Gập mở mục */
 function toggleSection(el) {
   const content = el.nextElementSibling;
@@ -187,36 +206,44 @@ function toggleSection(el) {
     content.style.display === "none" ? "block" : "none";
 }
 
-/* Lưu toàn bộ dữ liệu */
-function saveStrategy() {
-  const data = {
-    dca: dca_note.value,
-    scalp: scalp_note.value,
-    risk: risk_note.value,
-    checks: [...document.querySelectorAll("input[type=checkbox]")].map(c => c.checked)
-  };
-  localStorage.setItem(STRATEGY_KEY, JSON.stringify(data));
+/* LOGIC TÍNH DCA ĐỘNG */
+function calculateDynamicDCA() {
+  const maxCap = parseFloat(document.getElementById("dca_max_cap").value) || 0;
+  const emaPrice = parseFloat(document.getElementById("dca_ema_price").value) || 0;
+  const currentPrice = parseFloat(document.getElementById("dca_current_price").value) || 0;
+
+  if (emaPrice === 0) return;
+
+  // 1. Tính độ lệch %
+  const deviation = ((currentPrice - emaPrice) / emaPrice) * 100;
+  
+  // 2. Xác định % vốn giải ngân
+  let percentCapital = 0;
+  
+  if (deviation <= -10) {
+    percentCapital = 100; // Giảm sâu -> Vào 100% vốn
+  } else if (deviation <= -5) {
+    percentCapital = 80;  // Chiết khấu tốt -> Vào 80%
+  } else if (deviation < 0) {
+    percentCapital = 60;  // Hợp lý -> Vào 60%
+  } else if (deviation <= 5) {
+    percentCapital = 40;  // Hơi cao -> Vào 40% thăm dò
+  } else {
+    percentCapital = 0;   // Quá cao -> Đứng ngoài (0%)
+  }
+
+  // 3. Tính tiền thực tế
+  const actualAmount = maxCap * (percentCapital / 100);
+
+  // 4. Hiển thị kết quả
+  let devColor = deviation < 0 ? "green" : "red";
+  document.getElementById("res_deviation").innerHTML = `<span style="color:${devColor}">${deviation.toFixed(2)}%</span>`;
+  document.getElementById("res_percent").innerText = percentCapital + "%";
+  document.getElementById("res_amount").innerText = actualAmount.toLocaleString("vi-VN") + " VND";
 }
 
-/* Load dữ liệu */
-function loadStrategy() {
-  const data = JSON.parse(localStorage.getItem(STRATEGY_KEY));
-  if (!data) return;
-
-  dca_note.value = data.dca || "";
-  scalp_note.value = data.scalp || "";
-  risk_note.value = data.risk || "";
-
-  document.querySelectorAll("input[type=checkbox]").forEach((c,i)=>{
-    c.checked = data.checks?.[i] || false;
-  });
-}
-
-/* Auto save */
-document.querySelectorAll("textarea, input[type=checkbox]")
-  .forEach(el => el.addEventListener("input", saveStrategy));
-
-loadStrategy();
+// Chạy mặc định khi load trang
+calculateDynamicDCA();
 </script>
 
 </body>
