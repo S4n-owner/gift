@@ -108,7 +108,6 @@ body {
 
 <body>
 
-<!-- ĐƯỜNG DẪN CŨ ĐƯỢC GIỮ NGUYÊN -->
 <div class="nav">
   <a href="trading.html">← Nhật ký</a>
   <a href="../index.html">Home</a>
@@ -118,7 +117,6 @@ body {
 
 <h2>📐 Công cụ & Chiến lược giao dịch</h2>
 
-<!-- ================= MÁY TÍNH DCA ĐỘNG ================= -->
 <div class="section">
   <h3 onclick="toggleSection(this)">🧮 Máy tính DCA Động (Theo giá & EMA)</h3>
   <div class="content">
@@ -134,7 +132,7 @@ body {
         <input type="number" id="dca_ema_price" class="dca-input" value="110" oninput="calculateDynamicDCA()">
       </div>
       <div>
-        <label>Giá cổ phiếu/coin hiện tại:</label>
+        <label>Giá coin hiện tại:</label>
         <input type="number" id="dca_current_price" class="dca-input" value="100" oninput="calculateDynamicDCA()">
       </div>
     </div>
@@ -147,10 +145,9 @@ body {
   </div>
 </div>
 
-<!-- ================= CHIẾN LƯỢC HOLD SOL ================= -->
 <div class="section">
   <h3 onclick="toggleSection(this)">🔥 Chiến lược Tối ưu HOLD SOL (JupSOL)</h3>
-  <div class="content" style="display: none;"> <!-- Để ẩn mặc định, bấm vào h3 sẽ mở ra -->
+  <div class="content" style="display: none;">
     
     <div class="strategy-card uptrend">
       <h4 style="color: #28a745;">📈 Trạng thái: UPTREND (Tăng giá)</h4>
@@ -196,17 +193,103 @@ body {
   </div>
 </div>
 
+<div class="section">
+  <h3 onclick="toggleSection(this)">⚖️ Máy tính Vị thế, Ký quỹ & Rủi ro (Futures/Forex)</h3>
+  <div class="content" style="display: none;">
+    <div style="margin-bottom: 15px; display: flex; gap: 15px; flex-wrap: wrap;">
+      <div>
+        <label>Thị trường: </label>
+        <select id="trade_type" class="dca-input" onchange="toggleTradeType()">
+          <option value="futures">Crypto Futures</option>
+          <option value="forex">Forex / Hàng hóa / Chỉ số</option>
+        </select>
+      </div>
+      <div id="contract_size_wrapper" style="display: none;">
+        <label>Quy mô 1 Lot (Contract Size): </label>
+        <select id="contract_size" class="dca-input" onchange="calculatePosition()">
+          <option value="100000">Cặp tiền Forex chuẩn (100,000)</option>
+          <option value="100">Vàng - XAUUSD (100)</option>
+          <option value="1">Chỉ số / Cổ phiếu / Crypto (1)</option>
+        </select>
+      </div>
+      <div>
+        <label>Vị thế: </label>
+        <select id="position_direction" class="dca-input" onchange="calculatePosition()">
+          <option value="long">Long (Mua)</option>
+          <option value="short">Short (Bán)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dca-grid">
+      <div><label>Vốn tài khoản ($):</label><input type="number" id="account_balance" class="dca-input" value="100" oninput="calculatePosition()"></div>
+      <div><label>% Rủi ro định mất / lệnh:</label><input type="number" id="risk_percent" class="dca-input" value="10" oninput="calculatePosition()"></div>
+      <div><label>Giá vào (Entry):</label><input type="number" id="entry_price" class="dca-input" value="640" oninput="calculatePosition()"></div>
+      <div><label>Cắt lỗ (Stop Loss):</label><input type="number" id="sl_price" class="dca-input" value="645" oninput="calculatePosition()"></div>
+      <div><label>Chốt lời (Take Profit):</label><input type="number" id="tp_price" class="dca-input" value="630" oninput="calculatePosition()"></div>
+      <div><label> % Phí sàn (Giao dịch):</label><input type="number" id="fee_percent" class="dca-input" value="0.05" step="0.01" oninput="calculatePosition()"></div>
+      <div><label>Đòn bẩy (x):</label><input type="number" id="leverage" class="dca-input" value="100" oninput="calculatePosition()"></div>
+    </div>
+
+    <div id="liq_warning_box" class="note-box" style="background: #f8d7da; color: #721c24; border-left: 5px solid #dc3545; display: none; margin-bottom: 15px;">
+      <span id="liq_warning_msg"></span>
+    </div>
+
+    <div class="dca-result">
+      <p>💰 Số tiền rủi ro chấp nhận mất: <strong id="res_risk_amount">0 $</strong></p>
+      <p>📏 Kích thước số lượng vào lệnh: <strong id="res_position_size">0</strong></p>
+      <p>📦 Tổng khối lượng vị thế (Notional Value): <strong id="res_total_value" style="color: #6f42c1;">0 $</strong></p>
+      <p>🔒 Tiền Ký quỹ thực tế (Margin): <strong id="res_margin" style="color: #007bff;">0 $</strong></p>
+      <p>💀 Giá thanh lý dự kiến (Isolated): <strong id="res_liq_price" style="color: #990000;">0 $</strong></p>
+      <p>🎯 Lợi nhuận (Chạm TP): <strong id="res_tp_profit" style="color: green;">0 $</strong> (Phí sàn: <span id="res_fees_tp">0 $</span>)</p>
+      <p>❌ Thua lỗ tối đa (Chạm SL): <strong id="res_sl_loss" style="color: red;">0 $</strong> (Gồm phí: <span id="res_fees_sl">0 $</span>)</p>
+      <p>⚖️ Tỷ lệ R:R (Risk/Reward): <strong id="res_rr_ratio">0</strong> <span id="res_rr_status"></span></p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 onclick="toggleSection(this)">🎯 Máy tính Trung bình giá (Điểm hòa vốn)</h3>
+  <div class="content" style="display: none;">
+    <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #555;">Tính toán giá Entry trung bình khi bạn nhồi thêm lệnh (DCA).</p>
+    <div class="dca-grid">
+      <div><label>Giá Entry Lệnh 1:</label><input type="number" id="be_entry1" class="dca-input" value="100" oninput="calculateBreakEven()"></div>
+      <div><label>Khối lượng (Size) 1:</label><input type="number" id="be_size1" class="dca-input" value="10" oninput="calculateBreakEven()"></div>
+      <div><label>Giá Entry Lệnh 2:</label><input type="number" id="be_entry2" class="dca-input" value="90" oninput="calculateBreakEven()"></div>
+      <div><label>Khối lượng (Size) 2:</label><input type="number" id="be_size2" class="dca-input" value="20" oninput="calculateBreakEven()"></div>
+    </div>
+    <div class="dca-result">
+      <p>📌 Giá Entry Trung bình: <strong id="res_be_price" style="color: #ff8c00; font-size: 1.2em;">0</strong></p>
+      <p>📦 Tổng khối lượng: <strong id="res_be_total_size">0</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 onclick="toggleSection(this)">🏦 Máy tính LTV & Quản lý Thanh lý (Lending)</h3>
+  <div class="content" style="display: none;">
+    <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #555;">Kiểm tra độ an toàn (Health Factor) khi dùng JupSOL thế chấp vay USDC/SOL.</p>
+    <div class="dca-grid">
+      <div><label>Tổng giá trị Thế chấp ($):</label><input type="number" id="ltv_collateral" class="dca-input" value="1000" oninput="calculateLTV()"></div>
+      <div><label>Tổng giá trị Vay ($):</label><input type="number" id="ltv_borrow" class="dca-input" value="600" oninput="calculateLTV()"></div>
+    </div>
+    <div class="dca-result">
+      <p>📊 Tỷ lệ LTV (Loan-to-Value): <strong id="res_ltv_percent">0%</strong></p>
+      <p>🚨 Trạng thái rủi ro: <strong id="res_ltv_status">...</strong></p>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
 /* Gập mở mục */
 function toggleSection(el) {
   const content = el.nextElementSibling;
-  content.style.display =
-    content.style.display === "none" ? "block" : "none";
+  content.style.display = content.style.display === "none" ? "block" : "none";
 }
 
-/* LOGIC TÍNH DCA ĐỘNG */
+/* 1. LOGIC TÍNH DCA ĐỘNG */
 function calculateDynamicDCA() {
   const maxCap = parseFloat(document.getElementById("dca_max_cap").value) || 0;
   const emaPrice = parseFloat(document.getElementById("dca_ema_price").value) || 0;
@@ -214,36 +297,183 @@ function calculateDynamicDCA() {
 
   if (emaPrice === 0) return;
 
-  // 1. Tính độ lệch %
   const deviation = ((currentPrice - emaPrice) / emaPrice) * 100;
-  
-  // 2. Xác định % vốn giải ngân
   let percentCapital = 0;
   
-  if (deviation <= -10) {
-    percentCapital = 100; // Giảm sâu -> Vào 100% vốn
-  } else if (deviation <= -5) {
-    percentCapital = 80;  // Chiết khấu tốt -> Vào 80%
-  } else if (deviation < 0) {
-    percentCapital = 60;  // Hợp lý -> Vào 60%
-  } else if (deviation <= 5) {
-    percentCapital = 40;  // Hơi cao -> Vào 40% thăm dò
-  } else {
-    percentCapital = 0;   // Quá cao -> Đứng ngoài (0%)
-  }
+  if (deviation <= -10) { percentCapital = 100; } 
+  else if (deviation <= -5) { percentCapital = 80; } 
+  else if (deviation < 0) { percentCapital = 60; } 
+  else if (deviation <= 5) { percentCapital = 40; } 
+  else { percentCapital = 0; }
 
-  // 3. Tính tiền thực tế
   const actualAmount = maxCap * (percentCapital / 100);
-
-  // 4. Hiển thị kết quả
   let devColor = deviation < 0 ? "green" : "red";
   document.getElementById("res_deviation").innerHTML = `<span style="color:${devColor}">${deviation.toFixed(2)}%</span>`;
   document.getElementById("res_percent").innerText = percentCapital + "%";
   document.getElementById("res_amount").innerText = actualAmount.toLocaleString("vi-VN") + " VND";
 }
 
-// Chạy mặc định khi load trang
+/* 2. CHUYỂN ĐỔI GIAO DIỆN FUTURES / FOREX */
+function toggleTradeType() {
+  const type = document.getElementById("trade_type").value;
+  const contractWrapper = document.getElementById("contract_size_wrapper");
+  if (type === 'forex') {
+    contractWrapper.style.display = "block";
+  } else {
+    contractWrapper.style.display = "none";
+  }
+  calculatePosition();
+}
+
+/* 3. LOGIC TÍNH VỊ THẾ ĐÃ SỬA LỖI MARGIN & LÀM TRÒN */
+function calculatePosition() {
+  const type = document.getElementById("trade_type").value;
+  const direction = document.getElementById("position_direction").value;
+  
+  const balance = parseFloat(document.getElementById("account_balance").value) || 0;
+  const risk = parseFloat(document.getElementById("risk_percent").value) || 0;
+  const entry = parseFloat(document.getElementById("entry_price").value) || 0;
+  const sl = parseFloat(document.getElementById("sl_price").value) || 0;
+  const tp = parseFloat(document.getElementById("tp_price").value) || 0;
+  const feePercent = parseFloat(document.getElementById("fee_percent").value) || 0;
+  const leverage = parseFloat(document.getElementById("leverage").value) || 1;
+  const contractSize = parseFloat(document.getElementById("contract_size").value) || 100000;
+
+  const warningBox = document.getElementById("liq_warning_box");
+  const warningMsg = document.getElementById("liq_warning_msg");
+
+  warningBox.style.display = "none";
+
+  if (entry === 0 || sl === 0 || entry === sl) return;
+
+  if (direction === 'long' && sl >= entry) {
+    warningBox.style.display = "block";
+    warningMsg.innerHTML = "❌ <strong>Lỗi thiết lập:</strong> Lệnh LONG thì giá Cắt lỗ (SL) phải <strong>thấp hơn</strong> giá vào (Entry)!";
+    return;
+  }
+  if (direction === 'short' && sl <= entry) {
+    warningBox.style.display = "block";
+    warningMsg.innerHTML = "❌ <strong>Lỗi thiết lập:</strong> Lệnh SHORT thì giá Cắt lỗ (SL) phải <strong>cao hơn</strong> giá vào (Entry)!";
+    return;
+  }
+
+  const riskAmount = balance * (risk / 100);
+  let slDistance = Math.abs(entry - sl);
+  let tpDistance = Math.abs(tp - entry);
+  
+  let quantity = 0;       
+  let totalOrderValue = 0;
+  let marginRequired = 0; 
+  let liqPrice = 0;       
+  let isLiquidationEarly = false;
+
+  if (type === 'futures') {
+    quantity = riskAmount / slDistance; 
+    totalOrderValue = quantity * entry;
+    marginRequired = totalOrderValue / leverage; // Chuẩn hóa công thức Margin
+    
+    if (direction === 'long') {
+      liqPrice = entry * (1 - 1 / leverage);
+      if (liqPrice >= sl) isLiquidationEarly = true;
+    } else {
+      liqPrice = entry * (1 + 1 / leverage);
+      if (liqPrice <= sl) isLiquidationEarly = true;
+    }
+  } else {
+    // FOREX / GOLD / INDICES LOGIC
+    quantity = riskAmount / (slDistance * contractSize);
+    totalOrderValue = quantity * contractSize * entry;
+    marginRequired = totalOrderValue / leverage; // ĐÃ SỬA: Tính chuẩn Margin theo giá trị USD thực tế
+    
+    if (direction === 'long') {
+      liqPrice = entry * (1 - 1 / leverage);
+      if (liqPrice >= sl) isLiquidationEarly = true;
+    } else {
+      liqPrice = entry * (1 + 1 / leverage);
+      if (liqPrice <= sl) isLiquidationEarly = true;
+    }
+  }
+
+  const feeAmount = totalOrderValue * (feePercent / 100) * 2;
+  const rawTpProfit = type === 'futures' ? (quantity * tpDistance) : (quantity * tpDistance * contractSize);
+  
+  const netTpProfit = rawTpProfit - feeAmount;
+  const netSlLoss = riskAmount + feeAmount;
+
+  if (isLiquidationEarly) {
+    warningBox.style.display = "block";
+    warningMsg.innerHTML = `⚠️ <strong>CẢNH BÁO THANH LÝ SỚM (Isolated):</strong> Do đòn bẩy quá lớn (${leverage}x), Tiền Ký quỹ của bạn (${marginRequired.toFixed(2)}$) nhỏ hơn khoảng lỗ! Lệnh sẽ bị <strong>CHÁY (Thanh lý) tại giá ${liqPrice.toFixed(2)}$</strong> trước khi kịp chạm mức Cắt lỗ (SL: ${sl}$)! <br>👉 <em>Cách sửa: Hãy giảm bớt Đòn bẩy xuống hoặc mở rộng thu hẹp biên độ SL.</em>`;
+  }
+
+  const rrRatio = tpDistance / slDistance;
+  let rrStatus = rrRatio >= 2 ? "<span style='color:green;'>(Setup Tốt)</span>" : "<span style='color:red;'>(Không nên vào lệnh)</span>";
+
+  // Hiển thị kích thước linh hoạt số chữ số thập phân chống lỗi hiển thị 0.0000 Lot
+  let sizeText = "";
+  if (type === 'futures') {
+    sizeText = quantity.toFixed(4) + " Coin";
+  } else {
+    sizeText = quantity < 0.001 ? quantity.toFixed(6) + " Lot" : quantity.toFixed(4) + " Lot";
+  }
+
+  document.getElementById("res_risk_amount").innerText = riskAmount.toFixed(2) + " $";
+  document.getElementById("res_position_size").innerText = sizeText;
+  document.getElementById("res_total_value").innerText = totalOrderValue.toFixed(2) + " $";
+  document.getElementById("res_margin").innerText = marginRequired.toFixed(2) + " $";
+  document.getElementById("res_liq_price").innerText = type === 'futures' ? liqPrice.toFixed(2) + " $" : liqPrice.toFixed(4) + " $";
+  
+  document.getElementById("res_tp_profit").innerText = netTpProfit.toFixed(2) + " $";
+  document.getElementById("res_fees_tp").innerText = feeAmount.toFixed(2) + " $";
+  document.getElementById("res_sl_loss").innerText = netSlLoss.toFixed(2) + " $";
+  document.getElementById("res_fees_sl").innerText = feeAmount.toFixed(2) + " $";
+  
+  document.getElementById("res_rr_ratio").innerText = "1 : " + rrRatio.toFixed(2);
+  document.getElementById("res_rr_status").innerHTML = rrStatus;
+}
+
+/* 4. LOGIC TÍNH ĐIỂM HÒA VỐN */
+function calculateBreakEven() {
+  const e1 = parseFloat(document.getElementById("be_entry1").value) || 0;
+  const s1 = parseFloat(document.getElementById("be_size1").value) || 0;
+  const e2 = parseFloat(document.getElementById("be_entry2").value) || 0;
+  const s2 = parseFloat(document.getElementById("be_size2").value) || 0;
+
+  const totalSize = s1 + s2;
+  if (totalSize === 0) return;
+
+  const avgPrice = ((e1 * s1) + (e2 * s2)) / totalSize;
+
+  document.getElementById("res_be_price").innerText = avgPrice.toFixed(4);
+  document.getElementById("res_be_total_size").innerText = totalSize.toFixed(4);
+}
+
+/* 5. LOGIC TÍNH LTV */
+function calculateLTV() {
+  const collateral = parseFloat(document.getElementById("ltv_collateral").value) || 0;
+  const borrow = parseFloat(document.getElementById("ltv_borrow").value) || 0;
+
+  if (collateral === 0) {
+    document.getElementById("res_ltv_percent").innerText = "0%";
+    return;
+  }
+
+  const ltv = (borrow / collateral) * 100;
+  document.getElementById("res_ltv_percent").innerText = ltv.toFixed(2) + "%";
+
+  const statusEl = document.getElementById("res_ltv_status");
+  if (ltv < 50) {
+    statusEl.innerHTML = "<span style='color:green;'>An toàn (Khó thanh lý)</span>";
+  } else if (ltv <= 75) {
+    statusEl.innerHTML = "<span style='color:orange;'>Cảnh báo (Theo dõi sát)</span>";
+  } else {
+    statusEl.innerHTML = "<span style='color:red;'>Nguy hiểm (Dễ cháy tài khoản)</span>";
+  }
+}
+
 calculateDynamicDCA();
+calculatePosition();
+calculateBreakEven();
+calculateLTV();
 </script>
 
 </body>
