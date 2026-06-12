@@ -118,29 +118,40 @@ body {
 <h2>📐 Công cụ & Chiến lược giao dịch</h2>
 
 <div class="section">
-  <h3 onclick="toggleSection(this)">🧮 Máy tính DCA Động (Theo giá & EMA)</h3>
+  <h3 onclick="toggleSection(this)">🧮 Máy tính DCA Động (Quỹ Tiền Mặt & EMA 200)</h3>
   <div class="content">
-    <p style="margin: 0; font-size: 0.9em; color: #555;">Tự động tính % vốn giải ngân dựa vào độ lệch giữa Giá hiện tại và đường EMA.</p>
+    <p style="margin: 0; font-size: 0.9em; color: #555;">Tính toán tỷ trọng giải ngân dựa trên dòng tiền DCA hàng tháng và Quỹ dự trữ tập trung.</p>
     
     <div class="dca-grid">
       <div>
-        <label>Vốn tối đa/tháng (VND):</label>
-        <input type="number" id="dca_max_cap" class="dca-input" value="10000000" oninput="calculateDynamicDCA()">
+        <label>Dòng tiền DCA/tháng (VND):</label>
+        <input type="number" id="dca_monthly" class="dca-input" value="10000000" oninput="calculateDynamicDCA()">
       </div>
       <div>
-        <label>Giá đường EMA (vd: EMA 50):</label>
-        <input type="number" id="dca_ema_price" class="dca-input" value="110" oninput="calculateDynamicDCA()">
+        <label>Quỹ tiền mặt tập trung (VND):</label>
+        <input type="number" id="dca_cash_pool" class="dca-input" value="115000000" oninput="calculateDynamicDCA()">
       </div>
       <div>
-        <label>Giá coin hiện tại:</label>
-        <input type="number" id="dca_current_price" class="dca-input" value="100" oninput="calculateDynamicDCA()">
+        <label>% Trích quỹ khi Sale-off (>15%):</label>
+        <input type="number" id="dca_pool_extract" class="dca-input" value="10" oninput="calculateDynamicDCA()">
+      </div>
+      <div>
+        <label>Giá đường EMA 200:</label>
+        <input type="number" id="dca_ema_price" class="dca-input" value="100" oninput="calculateDynamicDCA()">
+      </div>
+      <div>
+        <label>Giá cổ phiếu hiện tại:</label>
+        <input type="number" id="dca_current_price" class="dca-input" value="80" oninput="calculateDynamicDCA()">
       </div>
     </div>
 
     <div class="dca-result">
       <p style="margin: 5px 0;">📉 Độ lệch (Giá so với EMA): <strong id="res_deviation">0%</strong></p>
-      <p style="margin: 5px 0;">📊 % Vốn nên vào tháng này: <strong id="res_percent">0%</strong></p>
-      <p style="margin: 5px 0; font-size: 1.1em;">💵 Số tiền cần giải ngân: <strong id="res_amount" style="color: #d9534f;">0 VND</strong></p>
+      <p style="margin: 5px 0;">📍 Phân loại: <span id="res_zone">...</span></p>
+      <p style="margin: 5px 0;">💵 Tiền DCA tháng dùng để mua: <strong id="res_dca_amount" style="color: #007bff;">0 VND</strong></p>
+      <p style="margin: 5px 0;">🏦 Hành động với Quỹ tiền mặt: <strong id="res_pool_action" style="color: #d39e00;">...</strong></p>
+      <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+      <p style="margin: 5px 0; font-size: 1.2em;">🔥 TỔNG TIỀN MUA THÁNG NÀY: <strong id="res_total_buy" style="color: #d9534f;">0 VND</strong></p>
     </div>
   </div>
 </div>
@@ -289,28 +300,63 @@ function toggleSection(el) {
   content.style.display = content.style.display === "none" ? "block" : "none";
 }
 
-/* 1. LOGIC TÍNH DCA ĐỘNG */
+/* 1. LOGIC TÍNH DCA ĐỘNG VỚI QUỸ TIỀN MẶT */
 function calculateDynamicDCA() {
-  const maxCap = parseFloat(document.getElementById("dca_max_cap").value) || 0;
+  const dcaMonthly = parseFloat(document.getElementById("dca_monthly").value) || 0;
+  const cashPool = parseFloat(document.getElementById("dca_cash_pool").value) || 0;
+  const poolExtractPercent = parseFloat(document.getElementById("dca_pool_extract").value) || 0;
   const emaPrice = parseFloat(document.getElementById("dca_ema_price").value) || 0;
   const currentPrice = parseFloat(document.getElementById("dca_current_price").value) || 0;
 
   if (emaPrice === 0) return;
 
   const deviation = ((currentPrice - emaPrice) / emaPrice) * 100;
-  let percentCapital = 0;
   
-  if (deviation <= -10) { percentCapital = 100; } 
-  else if (deviation <= -5) { percentCapital = 80; } 
-  else if (deviation < 0) { percentCapital = 60; } 
-  else if (deviation <= 5) { percentCapital = 40; } 
-  else { percentCapital = 0; }
+  let dcaPercent = 0;
+  let poolAmount = 0;
+  let zoneName = "";
+  let zoneColor = "";
+  let actionText = "";
 
-  const actualAmount = maxCap * (percentCapital / 100);
-  let devColor = deviation < 0 ? "green" : "red";
+  if (deviation > 15) {
+      // Vùng 1: Siêu Uptrend
+      zoneName = "Vùng 1: Siêu Uptrend (> 15%)";
+      zoneColor = "#28a745"; // Xanh lá
+      dcaPercent = 30;
+      let excess = dcaMonthly * 0.7;
+      actionText = `➕ Nạp thêm ${excess.toLocaleString("vi-VN")} VND (70% dư) vào Quỹ`;
+  } else if (deviation > 0 && deviation <= 15) {
+      // Vùng 2: Uptrend ổn định
+      zoneName = "Vùng 2: Uptrend ổn định (0% đến 15%)";
+      zoneColor = "#17a2b8"; // Xanh dương nhạt
+      dcaPercent = 60;
+      let excess = dcaMonthly * 0.4;
+      actionText = `➕ Nạp thêm ${excess.toLocaleString("vi-VN")} VND (40% dư) vào Quỹ`;
+  } else if (deviation <= 0 && deviation >= -15) {
+      // Vùng 3: Vùng Gom Hàng
+      zoneName = "Vùng 3: Vùng Gom Hàng (0% đến -15%)";
+      zoneColor = "#ff8c00"; // Cam
+      dcaPercent = 100;
+      actionText = `⏸️ Đứng im (Không nạp thêm, không rút quỹ)`;
+  } else {
+      // Vùng 4: Khủng hoảng / Sale-off
+      zoneName = "Vùng 4: Khủng hoảng / Sale-off (< -15%)";
+      zoneColor = "#dc3545"; // Đỏ
+      dcaPercent = 100;
+      poolAmount = cashPool * (poolExtractPercent / 100);
+      actionText = `🔥 RÚT RA ${poolAmount.toLocaleString("vi-VN")} VND (${poolExtractPercent}% Quỹ) để mua thêm!`;
+  }
+
+  const dcaAmount = dcaMonthly * (dcaPercent / 100);
+  const totalBuyAmount = dcaAmount + poolAmount;
+
+  let devColor = deviation < 0 ? "red" : "green";
+  
   document.getElementById("res_deviation").innerHTML = `<span style="color:${devColor}">${deviation.toFixed(2)}%</span>`;
-  document.getElementById("res_percent").innerText = percentCapital + "%";
-  document.getElementById("res_amount").innerText = actualAmount.toLocaleString("vi-VN") + " VND";
+  document.getElementById("res_zone").innerHTML = `<strong style="color:${zoneColor}">${zoneName}</strong>`;
+  document.getElementById("res_dca_amount").innerText = dcaAmount.toLocaleString("vi-VN") + " VND (" + dcaPercent + "%)";
+  document.getElementById("res_pool_action").innerText = actionText;
+  document.getElementById("res_total_buy").innerText = totalBuyAmount.toLocaleString("vi-VN") + " VND";
 }
 
 /* 2. CHUYỂN ĐỔI GIAO DIỆN FUTURES / FOREX */
