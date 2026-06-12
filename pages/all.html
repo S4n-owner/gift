@@ -18,7 +18,14 @@ button{margin-top:8px;padding:8px 12px;border:none;border-radius:8px;background:
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .asset-card{background:#0b0f14;padding:12px;border-radius:10px;border:1px solid var(--border)}
 .asset-card b{display:block;margin-top:6px;color:var(--accent)}
+
+/* CSS cũ cho list Phát triển bản thân */
 .item{display:grid;grid-template-columns:1fr 120px 40px;gap:8px;margin-top:8px}
+
+/* CSS mới cho list Danh mục chi tiết (Hỗ trợ nhập % và tự tính tiền) */
+.item-sub{display:grid;grid-template-columns:1fr 80px 120px 40px;gap:8px;margin-top:8px;align-items:center}
+.money-calc{text-align:right;color:var(--accent);font-weight:bold;font-size:14px}
+
 .up{color:var(--accent)} .down{color:var(--danger)}
 .warn{color:var(--danger);font-weight:bold;margin-top:6px}
 </style>
@@ -128,9 +135,9 @@ function renderSelf(){
   selfItems.forEach((it,i)=>{
     selfList.innerHTML+=`
     <div class="item">
-      <input value="${it.name}" oninput="selfItems[${i}].name=this.value;saveSelf()">
-      <input type="number" value="${it.money}" oninput="selfItems[${i}].money=this.value;saveSelf();renderWealth()">
-      <button onclick="selfItems.splice(${i},1);saveSelf();renderSelf()">✕</button>
+      <input value="${it.name}" placeholder="Tên khóa học..." oninput="selfItems[${i}].name=this.value;saveSelf()">
+      <input type="number" value="${it.money}" placeholder="Số tiền" oninput="selfItems[${i}].money=this.value;saveSelf();renderWealth()">
+      <button onclick="selfItems.splice(${i},1);saveSelf();renderSelf();renderWealth()">✕</button>
     </div>`;
   });
 }
@@ -139,10 +146,6 @@ function renderSelf(){
 
 function saveSub(){ localStorage.setItem("lifeos_sub",JSON.stringify(subAssets)); }
 
-function sumSub(key){
-  return subAssets[key].reduce((s,i)=>s+Number(i.money||0),0);
-}
-
 function renderTrees(){
   trees.innerHTML="";
   keys.forEach(k=>{
@@ -150,13 +153,14 @@ function renderTrees(){
       <h3>${labels[k]}</h3>
       <div id="${k}List"></div>
       <button onclick="addSub('${k}')">➕ Thêm</button>
-      <div id="${k}Warn"></div>`;
+      <div id="${k}Warn" class="warn"></div>`;
     renderSub(k);
   });
 }
 
 function addSub(key){
-  subAssets[key].push({name:"",money:""});
+  // Đổi từ money sang percent cho Cây chi tiết
+  subAssets[key].push({name:"",percent:""});
   saveSub(); renderSub(key);
 }
 
@@ -164,10 +168,14 @@ function renderSub(key){
   const box=document.getElementById(key+"List");
   box.innerHTML="";
   subAssets[key].forEach((it,i)=>{
+    // Hỗ trợ mượt mà nếu bạn có dữ liệu cũ đang lưu là "money"
+    const valPercent = it.percent !== undefined ? it.percent : (it.money || "");
+    
     box.innerHTML+=`
-    <div class="item">
-      <input value="${it.name}" oninput="subAssets['${key}'][${i}].name=this.value;saveSub()">
-      <input type="number" value="${it.money}" oninput="subAssets['${key}'][${i}].money=this.value;saveSub();renderWealth()">
+    <div class="item-sub">
+      <input value="${it.name}" placeholder="Tên mục (VD: GAS)" oninput="subAssets['${key}'][${i}].name=this.value;saveSub()">
+      <input type="number" value="${valPercent}" placeholder="Tỷ lệ %" oninput="subAssets['${key}'][${i}].percent=this.value;saveSub();renderWealth()">
+      <div class="money-calc" id="calc_${key}_${i}">0 đ</div>
       <button onclick="subAssets['${key}'].splice(${i},1);saveSub();renderSub('${key}');renderWealth()">✕</button>
     </div>`;
   });
@@ -190,28 +198,41 @@ function renderWealth(){
 
   const selfSum=selfItems.reduce((s,i)=>s+Number(i.money||0),0);
   selfTotal.innerText=f(selfSum);
-  // Cập nhật để fix lỗi JS: fund60v không tồn tại
+  // Fix lỗi logic fund60v ở code gốc của bạn
   selfWarn.innerText = selfSum>fund90v ? "⚠️ Vượt "+f(selfSum-fund90v) : "";
 
   const invest = total*0.9;
   investTotal.innerText=f(invest);
 
-  // CẬP NHẬT YÊU CẦU: Mỗi danh mục chiếm 15% tổng quỹ đầu tư (6 x 15% = 90% vừa đủ)
+  // MỖI DANH MỤC CHIẾM CHÍNH XÁC 15% QUỸ ĐẦU TƯ
   const limits={
     emergency:invest*0.15, etf:invest*0.15, stock:invest*0.15,
     bluechip:invest*0.15, crypto:invest*0.15, gold:invest*0.15
   };
 
   for(let k of keys){
+    const limit = limits[k];
+    let used = 0;
+    let percentSum = 0;
 
-    const used = sumSub(k);     // TIỀN THẬT TỪ CÂY
-    const limit = limits[k];   // HẠN MỨC CHIẾN LƯỢC
+    // LIÊN KẾT: Tính số tiền tự động dựa trên Tỷ lệ % người dùng nhập
+    subAssets[k].forEach((it, i) => {
+      const p = Number(it.percent !== undefined ? it.percent : (it.money || 0));
+      const calcMoney = Math.round(limit * (p / 100)); // Tính ra tiền Việt
+      
+      used += calcMoney;
+      percentSum += p;
 
-    document.getElementById(k).innerText =
-      f(used)+" / "+f(limit);
+      // Cập nhật số tiền hiển thị trên DOM
+      const el = document.getElementById(`calc_${k}_${i}`);
+      if(el) el.innerText = f(calcMoney);
+    });
 
+    document.getElementById(k).innerText = f(used)+" / "+f(limit);
+
+    // Cảnh báo nếu nhập % tổng vượt quá 100% của danh mục đó
     document.getElementById(k+"Warn").innerText =
-      used>limit ? "⚠️ Vượt "+f(used-limit) : "";
+      percentSum > 100 ? "⚠️ Vượt "+(percentSum-100)+"%" : "";
   }
 }
 
