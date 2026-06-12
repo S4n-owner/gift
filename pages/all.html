@@ -190,14 +190,16 @@ function renderWealth(){
 
   const selfSum=selfItems.reduce((s,i)=>s+Number(i.money||0),0);
   selfTotal.innerText=f(selfSum);
-  selfWarn.innerText = selfSum>fund60v ? "⚠️ Vượt "+f(selfSum-fund60v) : "";
+  // Cập nhật để fix lỗi JS: fund60v không tồn tại
+  selfWarn.innerText = selfSum>fund90v ? "⚠️ Vượt "+f(selfSum-fund90v) : "";
 
   const invest = total*0.9;
   investTotal.innerText=f(invest);
 
+  // CẬP NHẬT YÊU CẦU: Mỗi danh mục chiếm 15% tổng quỹ đầu tư (6 x 15% = 90% vừa đủ)
   const limits={
-    emergency:invest*0.20, etf:invest*0.20, stock:invest*0.15,
-    bluechip:invest*0.20, crypto:invest*0.10, gold:invest*0.15
+    emergency:invest*0.15, etf:invest*0.15, stock:invest*0.15,
+    bluechip:invest*0.15, crypto:invest*0.15, gold:invest*0.15
   };
 
   for(let k of keys){
