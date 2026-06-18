@@ -291,6 +291,34 @@ body {
   </div>
 </div>
 
+<div class="section">
+  <h3 onclick="toggleSection(this)">🛡️ Máy tính Công thức Đặt Stop Loss (Chống Quét Râu)</h3>
+  <div class="content" style="display: none;">
+    <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #555;">Tính điểm cắt lỗ khoa học dựa trên Biến động ATR hoặc Khoảng trừ hao cấu trúc đáy/đỉnh cũ.</p>
+    <div style="margin-bottom: 15px;">
+      <label>Hướng lệnh bổ trợ: </label>
+      <select id="sl_direction" class="dca-input" onchange="calculateSafeSL()">
+        <option value="long">Long (Mua lên)</option>
+        <option value="short">Short (Bán xuống)</option>
+      </select>
+    </div>
+    <div class="dca-grid">
+      <div><label>Giá Entry tham chiếu:</label><input type="number" id="sl_entry" class="dca-input" value="69.1" oninput="calculateSafeSL()"></div>
+      <div><label>Đỉnh/Đáy gần nhất (Swing):</label><input type="number" id="sl_swing" class="dca-input" value="68.33" oninput="calculateSafeSL()"></div>
+      <div><label>Giá trị ATR hiện tại (Khung đánh):</label><input type="number" id="sl_atr" class="dca-input" value="0.25" step="0.01" oninput="calculateSafeSL()"></div>
+      <div><label>Hệ số nhân ATR (Thường 1.5 - 2):</label><input type="number" id="sl_atr_multiplier" class="dca-input" value="1.5" step="0.1" oninput="calculateSafeSL()"></div>
+      <div><label>% Trừ hao thủ công (Buffer %):</label><input type="number" id="sl_buffer_percent" class="dca-input" value="0.4" step="0.1" oninput="calculateSafeSL()"></div>
+    </div>
+    <div class="dca-result" style="background: #fff5f5; border-left: 4px solid #e53e3e;">
+      <p>📐 <strong>Cách 1: SL theo Cấu trúc + % Trừ hao (Khuyên dùng chống Quét)</strong></p>
+      <p style="margin-left: 15px;">📍 Điểm SL nên đặt: <strong id="res_sl_structure" style="color: #e53e3e; font-size: 1.1em;">0</strong></p>
+      
+      <p style="margin-top: 15px;">📊 <strong>Cách 2: SL theo Biến động chỉ báo ATR</strong></p>
+      <p style="margin-left: 15px;">📍 Điểm SL theo ATR: <strong id="res_sl_atr" style="color: #b7791f; font-size: 1.1em;">0</strong></p>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -414,7 +442,7 @@ function calculatePosition() {
   let isLiquidationEarly = false;
 
   if (type === 'futures') {
-    quantity = riskAmount / slDistance; 
+    quantity = riskAmount / slDistance;
     totalOrderValue = quantity * entry;
     marginRequired = totalOrderValue / leverage; // Chuẩn hóa công thức Margin
     
@@ -516,10 +544,39 @@ function calculateLTV() {
   }
 }
 
+/* THÊM MỚI 6. LOGIC TÍNH TOÁN STOP LOSS AN TOÀN */
+function calculateSafeSL() {
+  const direction = document.getElementById("sl_direction").value;
+  const entry = parseFloat(document.getElementById("sl_entry").value) || 0;
+  const swing = parseFloat(document.getElementById("sl_swing").value) || 0;
+  const atr = parseFloat(document.getElementById("sl_atr").value) || 0;
+  const atrMultiplier = parseFloat(document.getElementById("sl_atr_multiplier").value) || 1.5;
+  const bufferPercent = parseFloat(document.getElementById("sl_buffer_percent").value) || 0;
+
+  let slStructure = 0;
+  let slAtr = 0;
+
+  if (direction === 'long') {
+    // Long: SL nằm dưới đáy gần nhất trừ đi một khoảng % buffer
+    slStructure = swing * (1 - bufferPercent / 100);
+    // Long: SL theo chỉ báo ATR nằm dưới giá entry
+    slAtr = entry - (atr * atrMultiplier);
+  } else {
+    // Short: SL nằm trên đỉnh gần nhất cộng thêm một khoảng % buffer
+    slStructure = swing * (1 + bufferPercent / 100);
+    // Short: SL theo chỉ báo ATR nằm trên giá entry
+    slAtr = entry + (atr * atrMultiplier);
+  }
+
+  document.getElementById("res_sl_structure").innerText = slStructure.toFixed(4);
+  document.getElementById("res_sl_atr").innerText = slAtr.toFixed(4);
+}
+
 calculateDynamicDCA();
 calculatePosition();
 calculateBreakEven();
 calculateLTV();
+calculateSafeSL(); // Kích hoạt hàm tính toán SL mới khi tải trang
 </script>
 
 </body>
